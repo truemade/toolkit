@@ -33,7 +33,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 //#define FBXSDK_VERSION_REVISION 2012
 
 #define _CRT_SECURE_NO_DEPRECATE
+#ifdef WIN32
 #include <tchar.h>
+#endif
 
 #include <vector>
 #include <string>
@@ -165,6 +167,8 @@ const char* stristr(const char* str1, const char* str2 )
 		}						\
 	} while (0)
 
+
+char* GetOutput(bool b, char* sz1){if (b) return sz1; return 0;}
 
 
 FbxVector4 GetNormal(FbxVector4 v4)
@@ -866,12 +870,6 @@ void RecurseFbxNodes(FbxNode* pNode)
 							}
 							else
 							{
-
-
-								FbxVector4& controlPoint0 = pMesh->GetControlPointAt(pnVertexIds[0]);
-								FbxVector4& controlPoint1 = pMesh->GetControlPointAt(pnVertexIds[1]);
-								FbxVector4& controlPoint2 = pMesh->GetControlPointAt(pnVertexIds[2]);
-							
 								FbxVector4 v3A = pMesh->GetControlPointAt(pnVertexIds[0]);
 								FbxVector4 v3B = pMesh->GetControlPointAt(pnVertexIds[1]);
 								FbxVector4 v3C = pMesh->GetControlPointAt(pnVertexIds[2]);
@@ -1676,12 +1674,92 @@ int CalculateHash(float x, float y, float z, u32 nHashSize)
 
 //---------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------
+#ifndef WIN32
+// These are used in _splitpath and _makepath, just trying to keep
+// everything consistent with the original Windows build.
+#ifndef _MAX_DRIVE
+    #define _MAX_DRIVE 3
+#endif
+#ifndef _MAX_DIR
+    #define _MAX_DIR 256
+#endif
+#ifndef _MAX_FNAME
+    #define _MAX_FNAME 256
+#endif
+#ifndef _MAX_EXT
+    #define _MAX_EXT 256
+#endif
+
+// This is not a full reproduction of _splitpath.
+// This is the bare minimum required by the exporter to get the only
+// information relevant so that we can build on non-Windows platforms.
+void _splitpath(const char * szFullPath,
+                char * drive,
+                char * dir,
+                char * szName,
+                char * szExt)
+{
+    if (!szFullPath || !szName || !szExt)
+        return;
+    
+    memset(szName, 0, _MAX_FNAME);
+    memset(szExt, 0, _MAX_EXT);
+
+    int nLength = strlen(szFullPath);
+    if (nLength >= _MAX_PATH)
+        return;
+
+    const char* szEnd = szFullPath + nLength;
+    const char* szCursor = szEnd - 1;
+    while (szCursor > szFullPath && *szCursor != '\\' && *szCursor != '/')
+    {
+        szCursor--;
+    }
+    if (szCursor != szFullPath)
+        szCursor++;
+
+    int nC = 0;
+    while (szCursor < szEnd)
+    {
+        if (*szCursor == '.')
+        {
+            szCursor++;
+            break;
+        }
+        szName[nC++] = *szCursor++;
+    }
+
+    nC = 0;
+    while (szCursor < szEnd)
+    {
+        szExt[nC++] = *szCursor++;
+    }
+}
+
+// This is not a full reproduction of _makepath.
+// This is the bare minimum required by the exporter to get the only
+// information relevant so that we can build on non-Windows platforms.
+void _makepath(
+   char *path,
+   const char *drive,
+   const char *dir,
+   const char *fname,
+   const char *ext
+)
+{
+    if (!path || !fname || !ext)
+        return;
+    
+    strcpy(path, fname);
+    strcat(path,".");
+    strcat(path, ext);
+}
+#endif // WIN32
+
 int AddTextureFileName(const char* szTextureFileName)
 {		
     const char* szFullPath =szTextureFileName;
 
-
-		
 	char szFileName[_MAX_PATH];
 	char szDrive[_MAX_DRIVE];
 	char szDir[_MAX_DIR];
@@ -1689,7 +1767,6 @@ int AddTextureFileName(const char* szTextureFileName)
 	char szExt[_MAX_EXT];
 	_splitpath(szFullPath, szDrive, szDir, szName, szExt);
 	_makepath(szFileName, "", "", szName, szExt);
-
 		
 	bool bFoundDuplicate = false;
 	for (int i = 0; i < (int)g_importTextureList.size(); i++)
@@ -2950,7 +3027,7 @@ int main(int argc, char *argv[])
 			
 					WriteU32((u32)pTexture->textureArray.size(), pFile, "Num Layers"); // num layers
 					for (size_t i = 0; i < (u32)pTexture->textureArray.size(); i++)
-						WriteU32(pTexture->textureArray[i], pFile, i == 0 ? "Texture index" : 0); // if num layers is greater then 2, then write an index into another texture
+						WriteU32(pTexture->textureArray[i], pFile, GetOutput(i == 0, "Texture index")); // if num layers is greater then 2, then write an index into another texture
 				}
 				else
 				{
@@ -3081,14 +3158,14 @@ int main(int argc, char *argv[])
 				bool bFirst = true;
 				for (int i = 0; i < (int)mesh.positionList.size() / 3; i++)
 				{
-					WriteFloat(mesh.positionList[i * 3 + 0], pFile, bFirst ? "x" : 0);
-					WriteFloat(mesh.positionList[i * 3 + 1], pFile, bFirst ? "y" : 0);
-					WriteFloat(mesh.positionList[i * 3 + 2], pFile, bFirst ? "z" : 0);
+					WriteFloat(mesh.positionList[i * 3 + 0], pFile, GetOutput(bFirst, "x"));
+					WriteFloat(mesh.positionList[i * 3 + 1], pFile, GetOutput(bFirst, "y"));
+					WriteFloat(mesh.positionList[i * 3 + 2], pFile, GetOutput(bFirst, "z"));
 
 					for (int nUvLayer = 0; nUvLayer < mesh.nUvSetCount; ++nUvLayer)
 					{
-						WriteFloat(mesh.uvSetList[nUvLayer][i * 2 + 0], pFile, bFirst ? "u" : 0);
-						WriteFloat(mesh.uvSetList[nUvLayer][i * 2 + 1], pFile, bFirst ? "v" : 0);
+						WriteFloat(mesh.uvSetList[nUvLayer][i * 2 + 0], pFile, GetOutput(bFirst, "u"));
+						WriteFloat(mesh.uvSetList[nUvLayer][i * 2 + 1], pFile, GetOutput(bFirst, "v"));
 					}
 					
 					for (int nColourLayerMain = 0; nColourLayerMain < mesh.nColourSetCount; ++nColourLayerMain)
@@ -3115,19 +3192,19 @@ int main(int argc, char *argv[])
 						if (a < 0) a = 0; else if (a > 255) a = 255;
 						
 						//u32 nColour = (a << 24) + (b << 16) + (g << 8) + r;
-						WriteU8(r, pFile, bFirst ? "r" : 0);
-						WriteU8(g, pFile, bFirst ? "g" : 0);
-						WriteU8(b, pFile, bFirst ? "b" : 0);
-						WriteU8(a, pFile, bFirst ? "a" : 0);
+						WriteU8(r, pFile, GetOutput(bFirst, "r"));
+						WriteU8(g, pFile, GetOutput(bFirst, "g"));
+						WriteU8(b, pFile, GetOutput(bFirst, "b"));
+						WriteU8(a, pFile, GetOutput(bFirst, "a"));
 					}
 
-					WriteFloat(mesh.normalList[i * 3 + 0], pFile, bFirst ? "normal x" : 0);
-					WriteFloat(mesh.normalList[i * 3 + 1], pFile, bFirst ? "normal y" : 0);
-					WriteFloat(mesh.normalList[i * 3 + 2], pFile, bFirst ? "normal y" : 0);
+					WriteFloat(mesh.normalList[i * 3 + 0], pFile, GetOutput(bFirst, "normal x"));
+					WriteFloat(mesh.normalList[i * 3 + 1], pFile, GetOutput(bFirst, "normal y"));
+					WriteFloat(mesh.normalList[i * 3 + 2], pFile, GetOutput(bFirst, "normal y"));
 					
 					if (mesh.nPrimitiveType == PRIMITIVE_TYPE_TRIANGLES) // will be sorted front to back for alpha
 					{
-						WriteFloat(mesh.fadeDistanceList[i], pFile, bFirst ? "fade distance" : 0);
+						WriteFloat(mesh.fadeDistanceList[i], pFile, GetOutput(bFirst, "fade distance"));
 					}
 					bFirst = false;
 				}
@@ -3179,13 +3256,13 @@ int main(int argc, char *argv[])
 			for (size_t i = 0; i < g_importCollisionMesh.polygonNumVerticesList.size(); i++)
 			{
 				int nNumSides = g_importCollisionMesh.polygonNumVerticesList[i];
-				WriteU8(nNumSides, pFile, i == 0 ? "Num Sides" : 0);
-				WriteU32(g_importCollisionMesh.polygonAttirbuteList[i], pFile, i == 0 ? "Atttribute" : 0); // attribute
+				WriteU8(nNumSides, pFile, GetOutput(i == 0, "Num Sides"));
+				WriteU32(g_importCollisionMesh.polygonAttirbuteList[i], pFile, GetOutput(i == 0, "Atttribute")); // attribute
 
 				for (int j = 0; j < nNumSides; j++)
 				{
 					int nVertex = g_importCollisionMesh.polygonIndiciesList[nIndex++];
-					WriteU16(nVertex, pFile, i == 0 ? "Vertex Index" : 0);
+					WriteU16(nVertex, pFile, GetOutput(i == 0, "Vertex Index"));
 				}
 			}
 		}
@@ -3195,13 +3272,13 @@ int main(int argc, char *argv[])
 			WriteS32(g_importCollisionMesh.grindEdgeAttributeList.size(), pFile, "Num Edges");
 			for (size_t i = 0; i < g_importCollisionMesh.grindEdgeAttributeList.size(); i++)
 			{
-				WriteU32(g_importCollisionMesh.grindEdgeAttributeList[i], pFile, i == 0 ? "Attribute" : 0);
-				WriteFloat(g_importCollisionMesh.grindEdgeList[i * 6 + 0], pFile, i == 0 ? "x 1" : 0);
-				WriteFloat(g_importCollisionMesh.grindEdgeList[i * 6 + 1], pFile, i == 0 ? "y 1" : 0);
-				WriteFloat(g_importCollisionMesh.grindEdgeList[i * 6 + 2], pFile, i == 0 ? "z 1" : 0);
-				WriteFloat(g_importCollisionMesh.grindEdgeList[i * 6 + 3], pFile, i == 0 ? "x 2" : 0);
-				WriteFloat(g_importCollisionMesh.grindEdgeList[i * 6 + 4], pFile, i == 0 ? "y 2" : 0);
-				WriteFloat(g_importCollisionMesh.grindEdgeList[i * 6 + 5], pFile, i == 0 ? "z 2" : 0);
+				WriteU32(g_importCollisionMesh.grindEdgeAttributeList[i], pFile, GetOutput(i == 0, "Attribute"));
+				WriteFloat(g_importCollisionMesh.grindEdgeList[i * 6 + 0], pFile, GetOutput(i == 0, "x 1"));
+				WriteFloat(g_importCollisionMesh.grindEdgeList[i * 6 + 1], pFile, GetOutput(i == 0, "y 1"));
+				WriteFloat(g_importCollisionMesh.grindEdgeList[i * 6 + 2], pFile, GetOutput(i == 0, "z 1"));
+				WriteFloat(g_importCollisionMesh.grindEdgeList[i * 6 + 3], pFile, GetOutput(i == 0, "x 2"));
+				WriteFloat(g_importCollisionMesh.grindEdgeList[i * 6 + 4], pFile, GetOutput(i == 0, "y 2"));
+				WriteFloat(g_importCollisionMesh.grindEdgeList[i * 6 + 5], pFile, GetOutput(i == 0, "z 2"));
 			}
 		}
 
@@ -3213,26 +3290,26 @@ int main(int argc, char *argv[])
 				ImportOob* pOob = g_importOobList[i];
 				WriteString(pOob->szName, pFile);
 				
-				WriteFloat((float)pOob->fbxMatrix[3][0], pFile, i == 0 ? "x" : 0);
-				WriteFloat((float)pOob->fbxMatrix[3][1], pFile, i == 0 ? "y" : 0);
-				WriteFloat((float)pOob->fbxMatrix[3][2], pFile, i == 0 ? "z" : 0);
-				WriteFloat((float)pOob->fbxMatrix[0][0], pFile, i == 0 ? "xx" : 0);
-				WriteFloat((float)pOob->fbxMatrix[0][1], pFile, i == 0 ? "xy" : 0);
-				WriteFloat((float)pOob->fbxMatrix[0][2], pFile, i == 0 ? "xz" : 0);
-				WriteFloat((float)pOob->fbxMatrix[1][0], pFile, i == 0 ? "yx" : 0);
-				WriteFloat((float)pOob->fbxMatrix[1][1], pFile, i == 0 ? "yy" : 0);
-				WriteFloat((float)pOob->fbxMatrix[1][2], pFile, i == 0 ? "yz" : 0);
-				WriteFloat((float)pOob->fbxMatrix[2][0], pFile, i == 0 ? "zx" : 0);
-				WriteFloat((float)pOob->fbxMatrix[2][1], pFile, i == 0 ? "zy" : 0);
-				WriteFloat((float)pOob->fbxMatrix[2][2], pFile, i == 0 ? "zz" : 0);
+				WriteFloat((float)pOob->fbxMatrix[3][0], pFile, GetOutput(i == 0, "x"));
+				WriteFloat((float)pOob->fbxMatrix[3][1], pFile, GetOutput(i == 0, "y"));
+				WriteFloat((float)pOob->fbxMatrix[3][2], pFile, GetOutput(i == 0, "z"));
+				WriteFloat((float)pOob->fbxMatrix[0][0], pFile, GetOutput(i == 0, "xx"));
+				WriteFloat((float)pOob->fbxMatrix[0][1], pFile, GetOutput(i == 0, "xy"));
+				WriteFloat((float)pOob->fbxMatrix[0][2], pFile, GetOutput(i == 0, "xz"));
+				WriteFloat((float)pOob->fbxMatrix[1][0], pFile, GetOutput(i == 0, "yx"));
+				WriteFloat((float)pOob->fbxMatrix[1][1], pFile, GetOutput(i == 0, "yy"));
+				WriteFloat((float)pOob->fbxMatrix[1][2], pFile, GetOutput(i == 0, "yz"));
+				WriteFloat((float)pOob->fbxMatrix[2][0], pFile, GetOutput(i == 0, "zx"));
+				WriteFloat((float)pOob->fbxMatrix[2][1], pFile, GetOutput(i == 0, "zy"));
+				WriteFloat((float)pOob->fbxMatrix[2][2], pFile, GetOutput(i == 0, "zz"));
 			}
-		}
-		
+        }
 		fclose(pFile);
-	}
 
+        SetStatus("Export Complete", 1.0f);
+    }
 
-    return 0; 
+    return 0;
 }
 
 
