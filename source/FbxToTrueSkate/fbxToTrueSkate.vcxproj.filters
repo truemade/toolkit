@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="libs">
+      <UniqueIdentifier>{c2e7a93e-f3d9-4b18-a2bd-314b80699f72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="nvtristrip">
+      <UniqueIdentifier>{c2132e32-33e4-41d0-b500-08ac382249ee}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\..\..\libs\FbxSdk\lib\vs2012\x86\release\libfbxsdk-mt.lib">
+      <Filter>libs</Filter>
+    </Library>
+    <Library Include="..\..\..\libs\FbxSdk\lib\vs2012\x86\debug\libfbxsdk-mt.lib">
+      <Filter>libs</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="NvTriStrip\src\NvTriStrip\VertexCache.cpp">
+      <Filter>nvtristrip</Filter>
+    </ClCompile>
+    <ClCompile Include="NvTriStrip\src\NvTriStrip\NvTriStrip.cpp">
+      <Filter>nvtristrip</Filter>
+    </ClCompile>
+    <ClCompile Include="NvTriStrip\src\NvTriStrip\NvTriStripObjects.cpp">
+      <Filter>nvtristrip</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="NvTriStrip\src\NvTriStrip\VertexCache.h">
+      <Filter>nvtristrip</Filter>
+    </ClInclude>
+    <ClInclude Include="NvTriStrip\src\NvTriStrip\NvTriStripObjects.h">
+      <Filter>nvtristrip</Filter>
+    </ClInclude>
+    <ClInclude Include="NvTriStrip\include\NvTriStrip.h">
+      <Filter>nvtristrip</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
