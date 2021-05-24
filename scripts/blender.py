@@ -1,9 +1,28 @@
 import bpy
+import os
+import subprocess
+import glob
+from zipfile import ZipFile
 from mathutils import Vector
+from platform import system
 from bpy_extras.io_utils import ExportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
 
+###########################################################################
+# TODO Change to add-on
+###########################################################################
+# bl_info = {
+#     "name": "True Skate Export",
+#     "blender": (2, 80, 0),
+#     "category": "Object",
+# }
+
+###########################################################################
+# file path of the running script to call fbx2ts located inside the same folder
+###########################################################################
+# script_filepath = os.path.realpath(__file__)
+script_filepath = bpy.context.space_data.text.filepath
 
 ###########################################################################
 # helper functions for transfering values between Custom Properties and Blender shader node settings. (Custom properties survive export and import from fbx)
@@ -13,6 +32,45 @@ def rbg2argb(v):
 
 def arbg2rgb(v):
     return (v[0], v[1], v[2])
+
+###########################################################################
+# fix UV map order
+###########################################################################
+def make_active(uvs, name):
+    for uv in uvs:
+        if uv.name == name:
+            uvs.active = uv
+            return
+    print("Could not find:", name, "\n(this should never happen)")
+
+def move_to_bottom(uvs, index):
+    uvs.active_index = index
+    new_name = uvs.active.name
+
+    bpy.ops.mesh.uv_texture_add()
+
+    # delete the "old" one
+    make_active(uvs, new_name)
+    bpy.ops.mesh.uv_texture_remove()
+
+    # set the name of the last one
+    uvs.active_index = len(uvs) - 1
+    uvs.active.name = new_name
+
+def fixUVOrder(object):
+    uvs = object.data.uv_layers
+    uvs.active_index = 0
+    if uvs.active.name.lower() != "map1":
+        orig_ind = uvs.active_index
+        if orig_ind == len(uvs) - 1:
+            return
+        # use "trick" on the one after it
+        move_to_bottom(uvs, orig_ind + 1)
+        # use the "trick" on the UV map
+        move_to_bottom(uvs, orig_ind)
+        # use the "trick" on the rest that are after where it was
+        for i in range(orig_ind, len(uvs) - 2):
+            move_to_bottom(uvs, orig_ind)
 
 # textures
 def setTexture(material, strTextureName:str, strTexture:str):
@@ -280,6 +338,76 @@ def exportScene(context, strFilepath:str, bExportSeletedOnly:bool):
     # export fbx                
     bpy.ops.export_scene.fbx(filepath = strFilepath, use_custom_props=True, use_selection = bExportSeletedOnly)
 
+def createTxtFromFbx(root_filename):
+    col = root_filename + "_col.fbx"
+    vis = root_filename + "_vis.fbx"
+    try:
+        if system() == 'Windows':
+            fbx2ts = os.path.dirname(script_filepath) + '\\fbxToTrueSkate'
+        else:
+            fbx2ts = os.path.dirname(script_filepath) + '/fbxToTrueSkate'
+        subprocess.call([fbx2ts, "-vis", vis, "-col", col, "-out", root_filename + ".txt"])
+    except:
+        print("Failed calling")
+
+def createZip(root_filename):
+    root_folder = os.path.dirname(root_filename)
+    filname = os.path.basename(root_filename)
+
+    with ZipFile(root_filename + ".zip", 'w') as zipObj:
+        zipObj.write(root_filename + ".txt", filname + ".txt")
+        zipObj.write(root_folder + "/_mod.json", "_mod.json")
+        if os.path.isdir(root_folder + "/textures"):
+            texture_path = root_folder + "/textures"
+        elif os.path.isdir(root_folder + "/Textures"):
+            texture_path = root_folder + "/Textures"
+        else:
+            texture_path = root_folder
+        for file in glob.glob(texture_path + "/*.jpg"):
+            zipObj.write(file, os.path.basename(file))
+        for file in glob.glob(texture_path + "/*.png"):
+            zipObj.write(file, os.path.basename(file))
+    zipObj.close()
+
+def exportBatchScene(context, strFilepath:str, bExportTxt:bool, bExportZip:bool):
+    scene = bpy.context.scene
+    filename, fileExt = os.path.splitext(strFilepath)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    for obj in scene.objects:
+        if obj.name.lower().endswith("_vis"):
+            if obj.users_collection[0].name != "Master Collection":
+                bpy.context.view_layer.layer_collection.children[obj.users_collection[0].name].hide_viewport = False
+            if not obj.visible_get():
+                obj.hide_set(False)
+            bpy.ops.object.select_all(action='DESELECT')
+            bpy.context.scene.objects[obj.name].select_set(True)
+            fixUVOrder(bpy.context.scene.objects[obj.name])
+            for object in bpy.context.selected_objects:
+                for materialSlot in object.material_slots:
+                    BlenderToSfx(materialSlot.material)
+            # export vis
+            bpy.ops.export_scene.fbx(filepath = filename + "_vis" + fileExt, use_custom_props=True, use_selection = True)
+        elif obj.name.lower().endswith("_col"):
+            if obj.users_collection[0].name != "Master Collection":
+                bpy.context.view_layer.layer_collection.children[obj.users_collection[0].name].hide_viewport = False
+            if not obj.visible_get():
+                obj.hide_set(False)
+                print(obj.users_collection[0].name)
+            bpy.ops.object.select_all(action='DESELECT')
+            bpy.context.scene.objects[obj.name].select_set(True)
+            for object in bpy.context.selected_objects:
+                for materialSlot in object.material_slots:
+                    BlenderToSfx(materialSlot.material)
+            # export col
+            bpy.ops.export_scene.fbx(filepath = filename + "_col" + fileExt, use_custom_props=True, use_selection = True)
+
+    if bExportZip:
+        createTxtFromFbx(filename)
+        createZip(filename)
+
+    if bExportTxt:
+        createTxtFromFbx(filename)
+
 ###########################################################################
 # User Interface
 ###########################################################################
@@ -287,10 +415,7 @@ class SfxToBlender(bpy.types.Operator) :
     bl_idname = "true_skate.sfx_to_blender"
     bl_label = "Set material to Tech2"
     #bl_options = {"UNDO"}
-    
-    
 
-    
     def execute(context, event) : 
         bpy.context.scene.display_settings.display_device = 'None'
         SetMaterialToShaderTech2(bpy.context.active_object.active_material, bAlpha=False)  
@@ -330,7 +455,7 @@ class SfxToBlenderAll(bpy.types.Operator) :
 class SfxExport(Operator, ExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
     bl_idname = "true_skate.export"
-    bl_label = "Export True Skate .fbx"
+    bl_label = "True Skate (.fbx)"
 
     filename_ext = ".fbx"
     filter_glob: StringProperty(
@@ -344,7 +469,6 @@ class SfxExport(Operator, ExportHelper):
         description="Selected Objects Only",
         default=True,
     )
-    
 
     #type: EnumProperty(
     #    name="Example Enum",
@@ -357,11 +481,40 @@ class SfxExport(Operator, ExportHelper):
     #)
 
     def execute(self, context):
-        exportScene(context, self.filepath, self.selectedObjectsOnly)                        
+        exportScene(context, self.filepath, self.selectedObjectsOnly)
         return {"FINISHED"}
     #end execute
 #end class
 
+class SfxBatchExport(Operator, ExportHelper):
+    """This appears in the tooltip of the operator and in the generated docs"""
+    bl_idname = "true_skate.batch_export"
+    bl_label = "True Skate Batch (.fbx)"
+
+    filename_ext = ".fbx"
+    filter_glob: StringProperty(
+        default="*.fbx",
+        options={'HIDDEN'},
+        maxlen=255,
+    )
+
+    generate_txt: BoolProperty(
+        name="Generate txt file",
+        description="This will convert fbx info to True Skate txt",
+        default=False,
+    )
+
+    generate_zip: BoolProperty(
+        name="Generate zip file",
+        description="This will gather all the needed files to generate a True Skate zip",
+        default=True,
+    )
+
+    def execute(self, context):
+        exportBatchScene(context, self.filepath, self.generate_txt, self.generate_zip)
+        return {"FINISHED"}
+    #end execute
+#end class
 
 ###########################################################################
 # Setup
@@ -369,7 +522,8 @@ class SfxExport(Operator, ExportHelper):
 def draw_export_menu(self, context):
     layout = self.layout
     layout.separator()
-    layout.operator(SfxExport.bl_idname, text="True Skate (.fbx)")
+    layout.operator(SfxExport.bl_idname, text=SfxExport.bl_label)
+    layout.operator(SfxBatchExport.bl_idname, text=SfxBatchExport.bl_label)
 
 def draw_shader_menu(self, context):
     layout = self.layout
@@ -389,6 +543,7 @@ def register():
     bpy.utils.register_class(SfxToBlenderAlpha)    
     bpy.utils.register_class(SfxToBlenderAll)
     bpy.utils.register_class(SfxExport)
+    bpy.utils.register_class(SfxBatchExport)
     bpy.types.NODE_MT_context_menu.append(draw_shader_menu)
     bpy.types.VIEW3D_MT_object_context_menu.append(draw_object_menu)
     bpy.types.TOPBAR_MT_file_export.append(draw_export_menu) 
@@ -398,12 +553,12 @@ def unregister():
     bpy.utils.unregister_class(SfxToBlenderAll)
     bpy.utils.unregister_class(SfxToBlenderAlpha)    
     bpy.utils.unregister_class(SfxExport)
+    bpy.utils.unregister_class(SfxBatchExport)
     bpy.types.NODE_MT_context_menu.remove(draw_shader_menu)
     bpy.types.VIEW3D_MT_object_context_menu.remove(draw_object_menu)
-    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.remove(draw_export_menu)
    
 if __name__ == "__main__" :    
-    #bpy.ops.script.reload()
-    register()    
+#    bpy.ops.script.reload()
+    register()
     #bpy.ops.true_skate.export('INVOKE_DEFAULT')
-    
