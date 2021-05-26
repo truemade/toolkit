@@ -208,11 +208,15 @@ bool TestTriangle(const unsigned short v0, const unsigned short v1, const unsign
 //
 // Be sure to call delete[] on the returned primGroups to avoid leaking mem
 //
-bool GenerateStrips(const unsigned short* in_indices, const unsigned int in_numIndices,
+// Return type will be a bool result and, in case of failure, the triangle
+// that failed to match
+//
+GenerateStripsResult GenerateStrips(const unsigned short* in_indices, const unsigned int in_numIndices,
 					PrimitiveGroup** primGroups, unsigned short* numGroups, bool validateEnabled)
 {
 	//put data in format that the stripifier likes
-	WordVec tempIndices;
+    GenerateStripsResult gStripResult;
+    WordVec tempIndices;
 	tempIndices.resize(in_numIndices);
 	unsigned short maxIndex = 0;
 	unsigned short minIndex = 0xFFFF;
@@ -385,7 +389,11 @@ bool GenerateStrips(const unsigned short* in_indices, const unsigned int in_numI
 						if (!TestTriangle(v0, v1, v2, in_bins, NUMBINS))
 						{
 							Cleanup(tempStrips, tempFaces);
-							return false;
+                            gStripResult.result = false;
+                            gStripResult.v0_ret = v0;
+                            gStripResult.v1_ret = v1;
+                            gStripResult.v2_ret = v2;
+							return gStripResult;
 						}
 					}
 					break;
@@ -419,7 +427,11 @@ bool GenerateStrips(const unsigned short* in_indices, const unsigned int in_numI
 						if (!TestTriangle(v0, v1, v2, in_bins, NUMBINS))
 						{
 							Cleanup(tempStrips, tempFaces);
-							return false;
+                            gStripResult.result = false;
+                            gStripResult.v0_ret = v0;
+                            gStripResult.v1_ret = v1;
+                            gStripResult.v2_ret = v2;
+                            return gStripResult;
 						}
 
 						flip = !flip;
@@ -437,8 +449,11 @@ bool GenerateStrips(const unsigned short* in_indices, const unsigned int in_numI
 
 	//clean up everything
 	Cleanup(tempStrips, tempFaces);
-
-	return true;
+    gStripResult.result = true;
+    gStripResult.v0_ret = 0;
+    gStripResult.v1_ret = 0;
+    gStripResult.v2_ret = 0;
+    return gStripResult;
 }
 
 
