@@ -2459,9 +2459,21 @@ int main(int argc, char *argv[])
 					u16 nNumPrimitiveGroups = 0;
 					DisableRestart();
 					SetStitchStrips(false);
-					bool bGenerateStripsResult = GenerateStrips(&pMesh->triagnleIndexList[nIndexStart], nIndexEnd - nIndexStart, &pPrimitiveGroups, &nNumPrimitiveGroups, true);
+					GenerateStripsResult bGenerateStripsResult = GenerateStrips(&pMesh->triagnleIndexList[nIndexStart], nIndexEnd - nIndexStart, &pPrimitiveGroups, &nNumPrimitiveGroups, true);
 					SetStitchStrips(true);
-					TA_ASSERT(bGenerateStripsResult);
+                    if(!bGenerateStripsResult.result){
+                        ReportError("Failed to generate triangle strips");
+                        ReportError("Index V0 - Coordinates x,y,z at %.2f, %.2f, %.2f", pMesh->positionList[bGenerateStripsResult.v0_ret * 3 + 0]/100,
+                            pMesh->positionList[bGenerateStripsResult.v0_ret * 3 + 2]/100 * -1,
+                            pMesh->positionList[bGenerateStripsResult.v0_ret * 3 + 1]/100);
+                        ReportError("Index V1 - Coordinates x,y,z at %.2f, %.2f, %.2f", pMesh->positionList[bGenerateStripsResult.v1_ret * 3 + 0]/100,
+                            pMesh->positionList[bGenerateStripsResult.v1_ret * 3 + 2]/100 * -1,
+                            pMesh->positionList[bGenerateStripsResult.v1_ret * 3 + 1]/100);
+                        ReportError("Index V2 - Coordinates x,y,z at %.2f, %.2f, %.2f\n", pMesh->positionList[bGenerateStripsResult.v2_ret * 3 + 0]/100,
+                            pMesh->positionList[bGenerateStripsResult.v2_ret * 3 + 2]/100 * -1,
+                            pMesh->positionList[bGenerateStripsResult.v2_ret * 3 + 1]/100);
+                    }
+                    TA_ASSERT(bGenerateStripsResult.result);
 					
 					float xDistanceFrom = 0.0f;
 					float yDistanceFrom = 0.0f;
@@ -2531,8 +2543,20 @@ int main(int argc, char *argv[])
 					PrimitiveGroup* pPrimitiveGroups;
 					u16 nNumPrimitiveGroups = 0;
 					DisableRestart();
-					bool bGenerateStripsResult = GenerateStrips(&pMesh->triagnleIndexList[nIndexStart], nIndexEnd - nIndexStart, &pPrimitiveGroups, &nNumPrimitiveGroups, true);
-					TA_ASSERT(bGenerateStripsResult);
+					GenerateStripsResult bGenerateStripsResult = GenerateStrips(&pMesh->triagnleIndexList[nIndexStart], nIndexEnd - nIndexStart, &pPrimitiveGroups, &nNumPrimitiveGroups, true);
+                    if(!bGenerateStripsResult.result){
+                        ReportError("Failed to generate triangle strips");
+                        ReportError("Index V0 - Coordinates x,y,z at %.2f, %.2f, %.2f", pMesh->positionList[bGenerateStripsResult.v0_ret * 3 + 0]/100,
+                            pMesh->positionList[bGenerateStripsResult.v0_ret * 3 + 2]/100 * -1,
+                            pMesh->positionList[bGenerateStripsResult.v0_ret * 3 + 1]/100);
+                        ReportError("Index V1 - Coordinates x,y,z at %.2f, %.2f, %.2f", pMesh->positionList[bGenerateStripsResult.v1_ret * 3 + 0]/100,
+                            pMesh->positionList[bGenerateStripsResult.v1_ret * 3 + 2]/100 * -1,
+                            pMesh->positionList[bGenerateStripsResult.v1_ret * 3 + 1]/100);
+                        ReportError("Index V2 - Coordinates x,y,z at %.2f, %.2f, %.2f\n", pMesh->positionList[bGenerateStripsResult.v2_ret * 3 + 0]/100,
+                            pMesh->positionList[bGenerateStripsResult.v2_ret * 3 + 2]/100 * -1,
+                            pMesh->positionList[bGenerateStripsResult.v2_ret * 3 + 1]/100);
+                    }
+					TA_ASSERT(bGenerateStripsResult.result);
 					for (int nGroup = 0; nGroup < nNumPrimitiveGroups; nGroup++)
 					{
 						PrimitiveGroup& primitiveGroup = pPrimitiveGroups[nGroup];
@@ -2689,8 +2713,20 @@ int main(int argc, char *argv[])
 			PrimitiveGroup* pPrimitiveGroups;
 			u16 nNumPrimitiveGroups = 0;
 			DisableRestart();
-			bool bGenerateStripsResult = GenerateStrips(&pMesh->triagnleIndexList[0], (int)pMesh->triagnleIndexList.size(), &pPrimitiveGroups, &nNumPrimitiveGroups, true);
-			TA_ASSERT(bGenerateStripsResult);
+			GenerateStripsResult bGenerateStripsResult = GenerateStrips(&pMesh->triagnleIndexList[0], (int)pMesh->triagnleIndexList.size(), &pPrimitiveGroups, &nNumPrimitiveGroups, true);
+            if(!bGenerateStripsResult.result){
+                ReportError("Failed to generate triangle strips");
+                ReportError("Index V0 - Coordinates x,y,z at %.2f, %.2f, %.2f", pMesh->positionList[bGenerateStripsResult.v0_ret * 3 + 0]/100,
+                    pMesh->positionList[bGenerateStripsResult.v0_ret * 3 + 2]/100 * -1,
+                    pMesh->positionList[bGenerateStripsResult.v0_ret * 3 + 1]/100);
+                ReportError("Index V1 - Coordinates x,y,z at %.2f, %.2f, %.2f", pMesh->positionList[bGenerateStripsResult.v1_ret * 3 + 0]/100,
+                    pMesh->positionList[bGenerateStripsResult.v1_ret * 3 + 2]/100 * -1,
+                    pMesh->positionList[bGenerateStripsResult.v1_ret * 3 + 1]/100);
+                ReportError("Index V2 - Coordinates x,y,z at %.2f, %.2f, %.2f\n", pMesh->positionList[bGenerateStripsResult.v2_ret * 3 + 0]/100,
+                    pMesh->positionList[bGenerateStripsResult.v2_ret * 3 + 2]/100 * -1,
+                    pMesh->positionList[bGenerateStripsResult.v2_ret * 3 + 1]/100);
+            }
+            TA_ASSERT(bGenerateStripsResult.result);
 			for (int nGroup = 0; nGroup < nNumPrimitiveGroups; nGroup++)
 			{
 				PrimitiveGroup& primitiveGroup = pPrimitiveGroups[nGroup];
