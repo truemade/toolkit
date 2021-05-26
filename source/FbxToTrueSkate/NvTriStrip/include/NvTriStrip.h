@@ -41,6 +41,14 @@ struct PrimitiveGroup
 	}
 };
 
+struct GenerateStripsResult
+{
+    bool result;
+    unsigned short v0_ret;
+    unsigned short v1_ret;
+    unsigned short v2_ret;
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // EnableRestart()
@@ -119,7 +127,7 @@ void SetListsOnly(const bool bListsOnly);
 //
 // Be sure to call delete[] on the returned primGroups to avoid leaking mem
 //
-bool GenerateStrips(const unsigned short* in_indices, const unsigned int in_numIndices,
+GenerateStripsResult GenerateStrips(const unsigned short* in_indices, const unsigned int in_numIndices,
 					PrimitiveGroup** primGroups, unsigned short* numGroups, bool validateEnabled = false);
 
 
