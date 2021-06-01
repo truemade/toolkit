@@ -712,7 +712,7 @@ def createT2Nodes(material):
     baseTexture_node.extension = 'REPEAT'
     baseTexture_node.name = "Base Texture"
     baseTexture_node.label = "Base Texture"
-    baseTexture_node.location = (-600,100)
+    baseTexture_node.location = (-600,150)
     # Overlay Texture node 
     overlayTexture_node = material.node_tree.nodes.new(type='ShaderNodeTexImage')
     overlayTexture_node.interpolation = 'Linear'
@@ -728,14 +728,14 @@ def createT2Nodes(material):
     lightmapTexture_node.extension = 'REPEAT'
     lightmapTexture_node.name = "Light Map Texture"
     lightmapTexture_node.label = "Light Map Texture"
-    lightmapTexture_node.location = (-600,-300)
+    lightmapTexture_node.location = (-600,-350)
     # Environment Texture node
     environmentTexture_node = material.node_tree.nodes.new(type='ShaderNodeTexEnvironment')
     environmentTexture_node.interpolation = 'Linear'
     environmentTexture_node.projection = 'EQUIRECTANGULAR'
     environmentTexture_node.name = "Environment Texture"
     environmentTexture_node.label = "Environment Texture"
-    environmentTexture_node.location = (-600,-500)
+    environmentTexture_node.location = (-600,-600)
     # UV Base Map node
     UVBaseMap_node = material.node_tree.nodes.new(type='ShaderNodeUVMap')
     UVBaseMap_node.name = "uv Base Map"
@@ -782,16 +782,32 @@ def createT2Nodes(material):
     material.node_tree.links.new(UVLightMap_node.outputs[0], lightmapTexture_node.inputs[0])
     material.node_tree.links.new(reflection_node.outputs[0], environmentTexture_node.inputs[0])
 
-# Create new material
-def createMaterial(materialName:str):
-    mat = bpy.data.materials.get("t2_" + materialName)
-    if(mat == None):
-        mat = bpy.data.materials.new(name="t2_" + materialName)
-        mat.use_nodes=True
-        # Clean the nodes of the newly created material
-        for node in mat.node_tree.nodes:
-            mat.node_tree.nodes.remove(node)
-        createT2Nodes(mat)
-    return mat
+class tech2Material:
+    # Create all groups that will be used to make a new tech2 material
+    def __init__(self):
+        createReflectionGroupNode()
+        createMixGroupNode()
+        createInverseGroupNode()
+        createInterpolateGroupNode()
+        createMaxComponentGroupNode()
+        createBlend1GroupNode()
+        createMagicBlendGroupNode()
+        createShaderTech2GroupNode()
 
-createMaterial("mine")
+    def new(self, material:bpy.types.Material=None):
+        if(material is not None):
+            new_material = bpy.data.materials.new(name="t2_" + material.name)
+            # TODO Needs to get all the data from the existing material
+        else:
+            new_material = bpy.data.materials.new(name="t2_Material")
+        new_material.use_nodes=True
+        # Clean the nodes of the newly created material
+        for node in new_material.node_tree.nodes:
+            new_material.node_tree.nodes.remove(node)
+        createT2Nodes(new_material)
+
+        return new_material
+
+t2_mine = tech2Material()
+t2_mine.new(bpy.data.materials.get("concrete"))
+t2_mine.new()
