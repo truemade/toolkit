@@ -741,21 +741,25 @@ def createT2Nodes(material):
     UVBaseMap_node.name = "uv Base Map"
     UVBaseMap_node.label = "uv Base Map"
     UVBaseMap_node.name = "uv Base Map"
+    UVBaseMap_node.uv_map = "map1"
     UVBaseMap_node.location = (-900,100)
     # Vertex Colour node
     vertexColour_node = material.node_tree.nodes.new(type='ShaderNodeVertexColor')
     vertexColour_node.name = "Vertex Colour"
     vertexColour_node.label = "Vertex Colour"
+    vertexColour_node.layer_name = "colorSet"
     vertexColour_node.location = (-900,-50)
     # UV Light Map node
     UVLightMap_node = material.node_tree.nodes.new(type='ShaderNodeUVMap')
     UVLightMap_node.name = "uv uvMapLightMap"
     UVLightMap_node.label = "uv uvMapLightMap"
+    UVLightMap_node.uv_map = "UVMap"
     UVLightMap_node.location = (-900,-200)
     # Vertex Colour 2 node
     vertexColour2_node = material.node_tree.nodes.new(type='ShaderNodeVertexColor')
     vertexColour2_node.name = "Vertex Colour2"
     vertexColour2_node.label = "Vertex Colour2"
+    vertexColour2_node.layer_name = "colorSet1"
     vertexColour2_node.location = (-900,-350)
     # Reflection group node
     reflection_group = createReflectionGroupNode()
