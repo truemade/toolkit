@@ -826,11 +826,10 @@ class tech2Material:
 
         return new_material
 
-class TS_OT_tech2_op(bpy.types.Operator):
+class TS_OT_new_tech2_op(bpy.types.Operator):
     bl_label = 'Create new Tech2 material'
-    bl_idname = 'ts.tech2_op'
+    bl_idname = 'ts.new_tech2_op'
     bl_description = 'Create an empty Shader Tech2 material'
-    bl_space_type = 'NODE_EDITOR'
     bl_context = 'objectmode'
     bl_options = {'REGISTER', 'INTERNAL'}
 
@@ -840,8 +839,38 @@ class TS_OT_tech2_op(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class TS_OT_convert_to_tech2_op(bpy.types.Operator):
+    bl_label = 'Convert to Tech2'
+    bl_idname = 'ts.convert_to_tech2_op'
+    bl_description = 'Convert an existing material to a Shader Tech2 material'
+    bl_context = 'objectmode'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+        t2_material = tech2Material()
+        current = bpy.context.active_object.active_material
+        new = t2_material.new(current)
+        # set new tech2 created material
+        bpy.context.active_object.active_material = new
+        # treat current uv map to map1 and add new uv for lightmap
+        current_uv = bpy.context.active_object.data.uv_layers.active
+        current_uv.name = "map1"
+        bpy.context.active_object.data.uv_layers.new(name="UVMap")
+        # treat current vertex color to colorSet1 and add new control vertex color
+        current_vert_color = bpy.context.active_object.data.vertex_colors.active
+        if(current_vert_color is not None):
+            if(current_vert_color.name != "colorSet"):
+                current_vert_color.name = "colorSet1"
+        else:
+            bpy.context.active_object.data.vertex_colors.new(name="colorSet")
+            bpy.context.active_object.data.vertex_colors.new(name="colorSet1")
+
+        return {'FINISHED'}
+
 def register():
-    bpy.utils.register_class(TS_OT_tech2_op)
+    bpy.utils.register_class(TS_OT_new_tech2_op)
+    bpy.utils.register_class(TS_OT_convert_to_tech2_op)
 
 def unregister():
-    bpy.utils.unregister_class(TS_OT_tech2_op)
+    bpy.utils.unregister_class(TS_OT_new_tech2_op)
+    bpy.utils.register_class(TS_OT_convert_to_tech2_op)

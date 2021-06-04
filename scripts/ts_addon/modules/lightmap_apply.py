@@ -26,7 +26,6 @@ class TS_OT_lightmap_op(bpy.types.Operator):
     bl_label = 'Apply light map'
     bl_idname = 'ts.lightmap_op'
     bl_description = 'Apply lightmap image to all materials'
-    bl_space_type = 'IMAGE_EDITOR'
     bl_context = 'objectmode'
     bl_options = {'REGISTER', 'INTERNAL'}
 
