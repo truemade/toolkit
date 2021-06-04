@@ -861,6 +861,7 @@ class TS_OT_convert_to_tech2_op(bpy.types.Operator):
         if(current_vert_color is not None):
             if(current_vert_color.name != "colorSet"):
                 current_vert_color.name = "colorSet1"
+                bpy.context.active_object.data.vertex_colors.new(name="colorSet")
         else:
             bpy.context.active_object.data.vertex_colors.new(name="colorSet")
             bpy.context.active_object.data.vertex_colors.new(name="colorSet1")
