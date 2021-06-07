@@ -40,6 +40,7 @@ class TS_PT_3DView_panel(TS_PT_tools_panel):
         layout = self.layout
         layout.operator('ts.new_tech2_op')
         layout.operator('ts.convert_to_tech2_op')
+        layout.operator('ts.convert_all_to_tech2_op')
 
 # Node editor panel
 class TS_PT_nodes_panel(TS_PT_tools_panel):
@@ -51,6 +52,7 @@ class TS_PT_nodes_panel(TS_PT_tools_panel):
         layout.operator('ts.lightmap_op')
         layout.operator('ts.new_tech2_op')
         layout.operator('ts.convert_to_tech2_op')
+        layout.operator('ts.convert_all_to_tech2_op')
 
 # Image editor panel
 class TS_PT_images_panel(TS_PT_tools_panel):

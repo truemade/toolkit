@@ -31,13 +31,13 @@ from . import addon_interface
 from . import modules
 
 def register():
-    modules.lightmap_apply.register()
-    modules.tech2shader_create.register()
+    modules.lightmap_apply_module.register()
+    modules.tech2shader_module.register()
     addon_interface.ui.register()
 
 def unregister():
-    modules.lightmap_apply.unregister()
-    modules.tech2shader_create.unregister()
+    modules.lightmap_apply_module.unregister()
+    modules.tech2shader_module.unregister()
     addon_interface.ui.unregister()
 
 if __name__ == '__main__':

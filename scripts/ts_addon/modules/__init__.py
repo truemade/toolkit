@@ -17,5 +17,5 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import bpy
-from . import lightmap_apply
-from . import tech2shader_create
+from . import lightmap_apply_module
+from . import tech2shader_module

@@ -18,6 +18,8 @@
 
 import bpy
 
+################ START OF SUPPORT FUNCTIONS ################
+
 # Create reflection group node
 def createReflectionGroupNode():
     reflection_group = bpy.data.node_groups.get("GetReflectionVector")
@@ -826,8 +828,152 @@ class tech2Material:
 
         return new_material
 
+# TODO move this to a mesh related file
+# change current object UV map to map1 and recreate UVMap
+def create_UV_maps():
+    if(len(bpy.context.active_object.data.uv_layers) == 1):
+        if(bpy.context.active_object.data.uv_layers.active.name != "map1"):
+            bpy.context.active_object.data.uv_layers.active.name = "map1"
+        bpy.context.active_object.data.uv_layers.new(name="UVMap")
+    else:
+        map1_exist = False
+        UVMap_exist = False
+        for uv in bpy.context.active_object.data.uv_layers:
+            if(uv.name == "map1"):
+                map1_exist = True
+            if(uv.name == "UVMap"):
+                UVMap_exist = True
+        if not(map1_exist):
+            bpy.context.active_object.data.uv_layers.active.name = "map1"
+        if not(UVMap_exist):
+            bpy.context.active_object.data.uv_layers.new(name="UVMap")
+
+# Set active Vertex color to colorSet
+def make_active(vertex_colors, name):
+    for vertex_color in vertex_colors:
+        if vertex_color.name == name:
+            vertex_colors.active = vertex_color
+            return
+    print("Could not find:", name, "\n(this should never happen)")
+
+def move_to_bottom(vertex_colors, index):
+    vertex_colors.active_index = index
+    new_name = vertex_colors.active.name
+    bpy.ops.mesh.vertex_color_add()
+
+    # delete the "old" one
+    make_active(vertex_colors, new_name)
+    bpy.ops.mesh.vertex_color_remove()
+
+    # set the name of the last one
+    vertex_colors.active_index = len(vertex_colors) - 1
+    vertex_colors.active.name = new_name
+
+def fixVertexColorOrder(object):
+    vertex_colors = object.data.vertex_colors
+    vertex_colors.active_index = 0
+    if vertex_colors.active.name != "colorSet":
+        orig_ind = vertex_colors.active_index
+        if orig_ind == len(vertex_colors) - 1:
+            return
+        # use "trick" on the one after it
+        move_to_bottom(vertex_colors, orig_ind + 1)
+        # use the "trick" on the vertex color
+        move_to_bottom(vertex_colors, orig_ind)
+        # use the "trick" on the rest that are after where it was
+        for i in range(orig_ind, len(vertex_colors) - 2):
+            move_to_bottom(vertex_colors, orig_ind)
+        vertex_colors.active_index = 0
+
+# create vertex colors "colorSet" and "colorSet1"
+def create_vertex_colors():
+    if(bpy.context.active_object.data.vertex_colors.active is None):
+        bpy.context.active_object.data.vertex_colors.new(name="colorSet")
+        bpy.context.active_object.data.vertex_colors.new(name="colorSet1")
+    elif(len(bpy.context.active_object.data.vertex_colors) == 1):
+        bpy.context.active_object.data.vertex_colors.active.name = "colorSet1"
+        bpy.context.active_object.data.vertex_colors.new(name="colorSet")
+    else:
+        colorSet_exist = False
+        colorSet1_exist = False
+        for vertex_color in bpy.context.active_object.data.vertex_colors:
+            if(vertex_color.name == "colorSet"):
+                colorSet_exist = True
+            if(vertex_color.name == "colorSet1"):
+                colorSet1_exist = True
+        if not(colorSet1_exist):
+            bpy.context.active_object.data.vertex_colors.active.name = "colorSet1"
+        if not(colorSet_exist):
+            bpy.context.active_object.data.vertex_colors.new(name="colorSet")
+
+def create_mockup_images():
+    overlay_image = False
+    lightmap_image = False
+    environment_image = False
+
+    for im in bpy.data.images:
+        if(im.name == "black_overlay_texture.png"):
+            overlay_image = True
+        if(im.name == "white_lightmap_texture.png"):
+            lightmap_image = True
+        if(im.name == "white_environment_texture.png"):
+            environment_image = True
+
+    if(overlay_image == False):
+        image = bpy.data.images.new("black_overlay_texture.png", alpha=True, width=16, height=16)
+        image.alpha_mode = 'STRAIGHT'
+        image.filepath_raw = "//black_overlay_texture.png"
+        image.file_format = 'PNG'
+        image.generated_color = (0,0,0,1)
+        image.save()
+    
+    if(lightmap_image == False):
+        image = bpy.data.images.new("white_lightmap_texture.png", alpha=True, width=2048, height=2048)
+        image.alpha_mode = 'STRAIGHT'
+        image.filepath_raw = "//white_lightmap_texture.png"
+        image.file_format = 'PNG'
+        image.generated_color = (1,1,1,1)
+        image.save()
+        
+    if(environment_image == False):
+        image = bpy.data.images.new("white_environment_texture.png", alpha=True, width=16, height=16)
+        image.alpha_mode = 'STRAIGHT'
+        image.filepath_raw = "//white_environment_texture.png"
+        image.file_format = 'PNG'
+        image.generated_color = (1,1,1,1)
+        image.save()
+
+def get_image_texture_from_material(object):
+    base_image = None
+    material = object.active_material
+    if(material.node_tree != None):
+        for node in material.node_tree.nodes:
+            if("Principled BSDF" == node.name):
+                for link in node.inputs[0].links:
+                    if("Image Texture" == link.from_node.name):
+                        base_image = link.from_node.image
+
+    return base_image
+
+def set_image_texture(object, node_name, image):
+    material = object.active_material
+    if(material.node_tree != None):
+        for node in material.node_tree.nodes:
+            if(node_name == node.name):
+                node.image = image
+
+def set_mockup_images(object):
+    overlay_image = bpy.data.images["black_overlay_texture.png"]
+    lightmap_image = bpy.data.images["white_lightmap_texture.png"]
+    environment_image = bpy.data.images["white_environment_texture.png"]
+    set_image_texture(object, "Overlay Texture", overlay_image)
+    set_image_texture(object, "Light Map Texture", lightmap_image)
+    set_image_texture(object, "Environment Texture", environment_image)
+
+################ END OF SUPPORT FUNCTIONS ################
+
 class TS_OT_new_tech2_op(bpy.types.Operator):
-    bl_label = 'Create new Tech2 material'
+    bl_label = 'Create new Tech2'
     bl_idname = 'ts.new_tech2_op'
     bl_description = 'Create an empty Shader Tech2 material'
     bl_context = 'objectmode'
@@ -840,9 +986,37 @@ class TS_OT_new_tech2_op(bpy.types.Operator):
         return {'FINISHED'}
 
 class TS_OT_convert_to_tech2_op(bpy.types.Operator):
-    bl_label = 'Convert to Tech2'
+    bl_label = 'Convert active to Tech2'
     bl_idname = 'ts.convert_to_tech2_op'
-    bl_description = 'Convert an existing material to a Shader Tech2 material'
+    bl_description = 'Convert an existing active material to a Shader Tech2 material'
+    bl_context = 'objectmode'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+        t2_material = tech2Material()
+        current_obj = bpy.context.active_object
+        new = t2_material.new(current_obj.active_material)
+        image_texture = get_image_texture_from_material(current_obj)
+
+        # set new tech2 created material
+        current_obj.active_material = new
+    
+        # create the UV maps for the mesh
+        create_UV_maps()
+    
+        # create the vertex colors for the mesh
+        create_vertex_colors()
+        fixVertexColorOrder(current_obj)
+
+        set_image_texture(current_obj, "Base Texture", image_texture)
+        set_mockup_images(current_obj)
+
+        return {'FINISHED'}
+
+class TS_OT_convert_all_to_tech2_op(bpy.types.Operator):
+    bl_label = 'Convert all materials to Tech2'
+    bl_idname = 'ts.convert_all_to_tech2_op'
+    bl_description = 'Convert all existing materials to a Shader Tech2 material'
     bl_context = 'objectmode'
     bl_options = {'REGISTER', 'INTERNAL'}
 
@@ -871,7 +1045,9 @@ class TS_OT_convert_to_tech2_op(bpy.types.Operator):
 def register():
     bpy.utils.register_class(TS_OT_new_tech2_op)
     bpy.utils.register_class(TS_OT_convert_to_tech2_op)
+    # bpy.utils.register_class(TS_OT_convert_all_to_tech2_op)
 
 def unregister():
     bpy.utils.unregister_class(TS_OT_new_tech2_op)
-    bpy.utils.register_class(TS_OT_convert_to_tech2_op)
+    bpy.utils.unregister_class(TS_OT_convert_to_tech2_op)
+    # bpy.utils.unregister_class(TS_OT_convert_all_to_tech2_op)
