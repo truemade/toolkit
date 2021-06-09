@@ -829,24 +829,24 @@ class tech2Material:
         return new_material
 
 # TODO move this to a mesh related file
-# change current object UV map to map1 and recreate UVMap
-def create_UV_maps():
-    if(len(bpy.context.active_object.data.uv_layers) == 1):
-        if(bpy.context.active_object.data.uv_layers.active.name != "map1"):
-            bpy.context.active_object.data.uv_layers.active.name = "map1"
-        bpy.context.active_object.data.uv_layers.new(name="UVMap")
+# change object UV map to map1 and recreate UVMap
+def create_UV_maps(UV_object):
+    if(len(UV_object.data.uv_layers) == 1):
+        if(UV_object.data.uv_layers.active.name != "map1"):
+            UV_object.data.uv_layers.active.name = "map1"
+        UV_object.data.uv_layers.new(name="UVMap")
     else:
         map1_exist = False
         UVMap_exist = False
-        for uv in bpy.context.active_object.data.uv_layers:
+        for uv in UV_object.data.uv_layers:
             if(uv.name == "map1"):
                 map1_exist = True
             if(uv.name == "UVMap"):
                 UVMap_exist = True
         if not(map1_exist):
-            bpy.context.active_object.data.uv_layers.active.name = "map1"
+            UV_object.data.uv_layers.active.name = "map1"
         if not(UVMap_exist):
-            bpy.context.active_object.data.uv_layers.new(name="UVMap")
+            UV_object.data.uv_layers.new(name="UVMap")
 
 # Set active Vertex color to colorSet
 def make_active(vertex_colors, name):
@@ -869,8 +869,8 @@ def move_to_bottom(vertex_colors, index):
     vertex_colors.active_index = len(vertex_colors) - 1
     vertex_colors.active.name = new_name
 
-def fixVertexColorOrder(object):
-    vertex_colors = object.data.vertex_colors
+def fixVertexColorOrder(mesh):
+    vertex_colors = mesh.data.vertex_colors
     vertex_colors.active_index = 0
     if vertex_colors.active.name != "colorSet":
         orig_ind = vertex_colors.active_index
@@ -886,25 +886,25 @@ def fixVertexColorOrder(object):
         vertex_colors.active_index = 0
 
 # create vertex colors "colorSet" and "colorSet1"
-def create_vertex_colors():
-    if(bpy.context.active_object.data.vertex_colors.active is None):
-        bpy.context.active_object.data.vertex_colors.new(name="colorSet")
-        bpy.context.active_object.data.vertex_colors.new(name="colorSet1")
-    elif(len(bpy.context.active_object.data.vertex_colors) == 1):
-        bpy.context.active_object.data.vertex_colors.active.name = "colorSet1"
-        bpy.context.active_object.data.vertex_colors.new(name="colorSet")
+def create_vertex_colors(mesh):
+    if(mesh.data.vertex_colors.active is None):
+        mesh.data.vertex_colors.new(name="colorSet")
+        mesh.data.vertex_colors.new(name="colorSet1")
+    elif(len(mesh.data.vertex_colors) == 1):
+        mesh.data.vertex_colors.active.name = "colorSet1"
+        mesh.data.vertex_colors.new(name="colorSet")
     else:
         colorSet_exist = False
         colorSet1_exist = False
-        for vertex_color in bpy.context.active_object.data.vertex_colors:
+        for vertex_color in mesh.data.vertex_colors:
             if(vertex_color.name == "colorSet"):
                 colorSet_exist = True
             if(vertex_color.name == "colorSet1"):
                 colorSet1_exist = True
         if not(colorSet1_exist):
-            bpy.context.active_object.data.vertex_colors.active.name = "colorSet1"
+            mesh.data.vertex_colors.active.name = "colorSet1"
         if not(colorSet_exist):
-            bpy.context.active_object.data.vertex_colors.new(name="colorSet")
+            mesh.data.vertex_colors.new(name="colorSet")
 
 def create_mockup_images():
     overlay_image = False
@@ -943,9 +943,8 @@ def create_mockup_images():
         image.generated_color = (1,1,1,1)
         image.save()
 
-def get_image_texture_from_material(object):
+def get_image_texture_from_material(material):
     base_image = None
-    material = object.active_material
     if(material.node_tree != None):
         for node in material.node_tree.nodes:
             if("Principled BSDF" == node.name):
@@ -955,20 +954,19 @@ def get_image_texture_from_material(object):
 
     return base_image
 
-def set_image_texture(object, node_name, image):
-    material = object.active_material
+def set_image_texture(material, node_name, image):
     if(material.node_tree != None):
         for node in material.node_tree.nodes:
             if(node_name == node.name):
                 node.image = image
 
-def set_mockup_images(object):
+def set_mockup_images(material):
     overlay_image = bpy.data.images["black_overlay_texture.png"]
     lightmap_image = bpy.data.images["white_lightmap_texture.png"]
     environment_image = bpy.data.images["white_environment_texture.png"]
-    set_image_texture(object, "Overlay Texture", overlay_image)
-    set_image_texture(object, "Light Map Texture", lightmap_image)
-    set_image_texture(object, "Environment Texture", environment_image)
+    set_image_texture(material, "Overlay Texture", overlay_image)
+    set_image_texture(material, "Light Map Texture", lightmap_image)
+    set_image_texture(material, "Environment Texture", environment_image)
 
 ################ END OF SUPPORT FUNCTIONS ################
 
@@ -993,23 +991,30 @@ class TS_OT_convert_to_tech2_op(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
-        t2_material = tech2Material()
+        # TODO mockup should only be set if the material is not a tech2 already
+        create_mockup_images()
+
         current_obj = bpy.context.active_object
-        new = t2_material.new(current_obj.active_material)
-        image_texture = get_image_texture_from_material(current_obj)
+        active_material = current_obj.active_material
+
+        t2_material = tech2Material()
+        new = t2_material.new(active_material)
+        image_texture = get_image_texture_from_material(active_material)
 
         # set new tech2 created material
-        current_obj.active_material = new
+        active_material = new
     
         # create the UV maps for the mesh
-        create_UV_maps()
+        create_UV_maps(current_obj)
     
         # create the vertex colors for the mesh
-        create_vertex_colors()
+        create_vertex_colors(current_obj)
         fixVertexColorOrder(current_obj)
 
-        set_image_texture(current_obj, "Base Texture", image_texture)
-        set_mockup_images(current_obj)
+        set_image_texture(active_material, "Base Texture", image_texture)
+
+        # TODO mockup should only be set if the material is not a tech2 already
+        set_mockup_images(active_material)
 
         return {'FINISHED'}
 
@@ -1021,33 +1026,38 @@ class TS_OT_convert_all_to_tech2_op(bpy.types.Operator):
     bl_options = {'REGISTER', 'INTERNAL'}
 
     def execute(self, context):
-        t2_material = tech2Material()
-        current = bpy.context.active_object.active_material
-        new = t2_material.new(current)
-        # set new tech2 created material
-        bpy.context.active_object.active_material = new
-        # treat current uv map to map1 and add new uv for lightmap
-        current_uv = bpy.context.active_object.data.uv_layers.active
-        current_uv.name = "map1"
-        bpy.context.active_object.data.uv_layers.new(name="UVMap")
-        # treat current vertex color to colorSet1 and add new control vertex color
-        current_vert_color = bpy.context.active_object.data.vertex_colors.active
-        if(current_vert_color is not None):
-            if(current_vert_color.name != "colorSet"):
-                current_vert_color.name = "colorSet1"
-                bpy.context.active_object.data.vertex_colors.new(name="colorSet")
-        else:
-            bpy.context.active_object.data.vertex_colors.new(name="colorSet")
-            bpy.context.active_object.data.vertex_colors.new(name="colorSet1")
+        # TODO mockup should only be set if the material is not a tech2 already
+        create_mockup_images()
+        for ob in bpy.data.objects:
+            if(ob.name.lower().endswith("_vis")):
+                for material in ob.material_slots:
+                    t2_material = tech2Material()
+                    new = t2_material.new(material.material)
+                    image_texture = get_image_texture_from_material(material.material)
+
+                    # set new tech2 created material
+                    material.material = new
+    
+                    # create the UV maps for the mesh
+                    create_UV_maps(ob)
+    
+                    # create the vertex colors for the mesh
+                    create_vertex_colors(ob)
+                    fixVertexColorOrder(ob)
+
+                    set_image_texture(material.material, "Base Texture", image_texture)
+
+                    # TODO mockup should only be set if the material is not a tech2 already
+                    set_mockup_images(material.material)
 
         return {'FINISHED'}
 
 def register():
     bpy.utils.register_class(TS_OT_new_tech2_op)
     bpy.utils.register_class(TS_OT_convert_to_tech2_op)
-    # bpy.utils.register_class(TS_OT_convert_all_to_tech2_op)
+    bpy.utils.register_class(TS_OT_convert_all_to_tech2_op)
 
 def unregister():
     bpy.utils.unregister_class(TS_OT_new_tech2_op)
     bpy.utils.unregister_class(TS_OT_convert_to_tech2_op)
-    # bpy.utils.unregister_class(TS_OT_convert_all_to_tech2_op)
+    bpy.utils.unregister_class(TS_OT_convert_all_to_tech2_op)
