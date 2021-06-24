@@ -749,6 +749,29 @@ def createT2Nodes(material):
     tech2_node.name = "Shader Tech2"
     tech2_node.label = "Shader Tech2"
     tech2_node.node_tree = bpy.data.node_groups[tech2_group.name]
+    tech2_node.inputs[0].default_value = (0.8, 0.8, 0.8, 1)
+    tech2_node.inputs[1].default_value = (0.8, 0.8, 0.8, 1)
+    tech2_node.inputs[2].default_value = (0.5, 0.5, 0.5, 1)
+    tech2_node.inputs[3].default_value = (0.0, 0.0, 0.0, 1)
+    tech2_node.inputs[4].default_value = (1.0, 1.0, 1.0, 1)
+    tech2_node.inputs[5].default_value = 1.000
+    tech2_node.inputs[6].default_value = (0.8, 0.8, 0.8, 1)
+    tech2_node.inputs[7].default_value = (0.0, 0.0, 0.0, 1)
+    tech2_node.inputs[8].default_value = 0.626
+    tech2_node.inputs[9].default_value = 0.000
+    tech2_node.inputs[10].default_value = (0.795, 0.795, 0.795, 1)
+    tech2_node.inputs[11].default_value = (1, 1, 1, 1)
+    tech2_node.inputs[12].default_value = 5.583
+    tech2_node.inputs[13].default_value = 0.858
+    tech2_node.inputs[14].default_value = 0.342
+    tech2_node.inputs[15].default_value = 0.655
+    tech2_node.inputs[16].default_value = 0.023
+    tech2_node.inputs[17].default_value = (0.838, 0.838, 0.838, 1)
+    tech2_node.inputs[18].default_value = (1, 1, 1, 1)
+    tech2_node.inputs[19].default_value = 5.500
+    tech2_node.inputs[20].default_value = 0.800
+    tech2_node.inputs[21].default_value = 0.372
+    tech2_node.inputs[22].default_value = 1.000
     tech2_node.location = (-200,0)
     # Base Texture node 
     baseTexture_node = material.node_tree.nodes.new(type='ShaderNodeTexImage')
