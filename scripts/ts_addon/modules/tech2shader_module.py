@@ -511,7 +511,7 @@ def createShaderTech2GroupNode():
         
         shaderTech2_group.inputs.new('NodeSocketColor','Overlay Texture')
         shaderTech2_group.inputs[1].default_value = (0.8, 0.8, 0.8, 1)
-        
+
         shaderTech2_group.inputs.new('NodeSocketColor','Light Map Texture')
         shaderTech2_group.inputs[2].default_value = (0.5, 0.5, 0.5, 1)
         
@@ -522,7 +522,9 @@ def createShaderTech2GroupNode():
         shaderTech2_group.inputs[4].default_value = (1.0, 1.0, 1.0, 1)
 
         shaderTech2_group.inputs.new('NodeSocketFloat','Specular')
-        shaderTech2_group.inputs[5].default_value = 1.0
+        shaderTech2_group.inputs[5].default_value = 1.000
+        shaderTech2_group.inputs[5].min_value = 0.000
+        shaderTech2_group.inputs[5].max_value = 1.000
         
         shaderTech2_group.inputs.new('NodeSocketColor','VertexColour')
         shaderTech2_group.inputs[6].default_value = (0.8, 0.8, 0.8, 1)
@@ -532,9 +534,13 @@ def createShaderTech2GroupNode():
         
         shaderTech2_group.inputs.new('NodeSocketFloat','Blend Mode G')
         shaderTech2_group.inputs[8].default_value = 0.626
+        shaderTech2_group.inputs[8].min_value = 0.000
+        shaderTech2_group.inputs[8].max_value = 1.000
         
         shaderTech2_group.inputs.new('NodeSocketFloat','Ignore Base Colour G')
-        shaderTech2_group.inputs[9].default_value = 0.0
+        shaderTech2_group.inputs[9].default_value = 0.000
+        shaderTech2_group.inputs[9].min_value = 0.000
+        shaderTech2_group.inputs[9].max_value = 1.000
         
         shaderTech2_group.inputs.new('NodeSocketColor','Shadow Colour G')
         shaderTech2_group.inputs[10].default_value = (0.795, 0.795, 0.795, 1)
@@ -544,18 +550,28 @@ def createShaderTech2GroupNode():
         
         shaderTech2_group.inputs.new('NodeSocketFloat','Blend Sharpness G')
         shaderTech2_group.inputs[12].default_value = 5.583
+        shaderTech2_group.inputs[12].min_value = 0.000
+        shaderTech2_group.inputs[12].max_value = 10.000
         
         shaderTech2_group.inputs.new('NodeSocketFloat','Blend Level G')
         shaderTech2_group.inputs[13].default_value = 0.858
+        shaderTech2_group.inputs[13].min_value = 0.000
+        shaderTech2_group.inputs[13].max_value = 1.000
 
         shaderTech2_group.inputs.new('NodeSocketFloat','Specular G')
         shaderTech2_group.inputs[14].default_value = 0.342
+        shaderTech2_group.inputs[14].min_value = 0.000
+        shaderTech2_group.inputs[14].max_value = 1.000
         
         shaderTech2_group.inputs.new('NodeSocketFloat','Blend Mode B')
         shaderTech2_group.inputs[15].default_value = 0.655
+        shaderTech2_group.inputs[15].min_value = 0.000
+        shaderTech2_group.inputs[15].max_value = 1.000
         
         shaderTech2_group.inputs.new('NodeSocketFloat','Ignore Base Colour B')
         shaderTech2_group.inputs[16].default_value = 0.023
+        shaderTech2_group.inputs[16].min_value = 0.000
+        shaderTech2_group.inputs[16].max_value = 1.000
         
         shaderTech2_group.inputs.new('NodeSocketColor','Shadow Colour B')
         shaderTech2_group.inputs[17].default_value = (0.838, 0.838, 0.838, 1)
@@ -565,15 +581,24 @@ def createShaderTech2GroupNode():
         
         shaderTech2_group.inputs.new('NodeSocketFloat','Blend Sharpness B')
         shaderTech2_group.inputs[19].default_value = 5.500
+        shaderTech2_group.inputs[19].min_value = 0.000
+        shaderTech2_group.inputs[19].max_value = 10.000
         
         shaderTech2_group.inputs.new('NodeSocketFloat','Blend Level B')
         shaderTech2_group.inputs[20].default_value = 0.800
+        shaderTech2_group.inputs[20].min_value = 0.000
+        shaderTech2_group.inputs[20].max_value = 20.000
 
         shaderTech2_group.inputs.new('NodeSocketFloat','Specular B')
         shaderTech2_group.inputs[21].default_value = 0.372
+        shaderTech2_group.inputs[21].min_value = 0.000
+        shaderTech2_group.inputs[21].max_value = 1.000
         
         shaderTech2_group.inputs.new('NodeSocketFloat','Game Lighting')
-        shaderTech2_group.inputs[22].default_value = 1
+        shaderTech2_group.inputs[22].default_value = 1.000
+        shaderTech2_group.inputs[21].min_value = 0.000
+        shaderTech2_group.inputs[21].max_value = 1.000
+
         # Output node
         shaderTech2_group_output = shaderTech2_group.nodes.new('NodeGroupOutput')
         shaderTech2_group_output.location = (0,0)
