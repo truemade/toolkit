@@ -1050,7 +1050,7 @@ class TS_OT_convert_to_tech2_op(bpy.types.Operator):
         image_texture = get_image_texture_from_material(active_material)
 
         # set new tech2 created material
-        active_material = new
+        current_obj.active_material = new
     
         # create the UV maps for the mesh
         create_UV_maps(current_obj)
